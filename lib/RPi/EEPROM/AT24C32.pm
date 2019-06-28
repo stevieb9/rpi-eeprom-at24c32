@@ -44,10 +44,8 @@ sub read {
 }
 sub write {
     my ($self, $addr, $byte) = @_;
-
     _check_addr('write', $addr);
     _check_byte('write', $byte);
-
     return eeprom_write($self->fd, $addr, $byte);
 }
 sub _check_addr {
@@ -88,36 +86,32 @@ __END__
 
 =head1 NAME
 
-RPi::EEPROM::AT24C32 - Read and write to the AT24C32 based EEPROM ICs via i2c
+RPi::EEPROM::AT24C32 - Read and write to the AT24C32 based EEPROM IC via i2c
 
 =head1 DESCRIPTION
 
-Read and write data to the AT24C32-based EEPROM Integrated Circuits over the i2c
+Read and write data to the AT24C32-based EEPROM Integrated Circuit over the i2c
 bus.
 
-Currently, only the actual AT24C32 that has 4096 8-bit address locations
-(C<0-4095>).
+Currently, only the actual AT24C32 that has C<32Kb> of storage space has been
+tested. This means that memory addresses (C<0-4095>) are available for use.
 
-It'll work for the AT24C64 unit as well, but only half of the address space will
-be available. I'll update this after I get one of these units.
+It'll work for the AT24C64 unit, but only half of the address space will be
+available. I'll update this after I get one of these units.
 
 =head1 SYNOPSIS
 
     use RPi::EEPROM::AT24C32;
 
-    my $eeprom = RPi::EEPROM::AT24C32->new(
-        device  => '/dev/i2c-1', # optional, default
-        address => 0x57,         # optional, default
-        delay   => 1             # optional, default
-    );
+    my $eeprom = RPi::EEPROM::AT24C32->new;
 
     # write to, and read from a block of EEPROM addresses in a loop
 
     my $value = 1;
 
-    for my $memory_address (200..225){
-        $eeprom->write($memory_address, $value);
-        print $eeprom->read($memory_address) . "\n";
+    for my $slot (200..225){
+        $eeprom->write($slot, $value);
+        print $eeprom->read($slot) . "\n";
         $value++;
     }
 
@@ -222,5 +216,3 @@ Steve Bertrand, C<< <steveb at cpan.org> >>
 Copyright 2019 Steve Bertrand.
 
 GPL version 2+ (due to using modified GPL'd code).
-
-1; # End of RPi::EEPROM::AT24C32
