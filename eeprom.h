@@ -20,10 +20,6 @@
 #define _EEPROM_H_
 #include "i2c-dev.h"
 
-#define EEPROM_TYPE_UNKNOWN	0
-#define EEPROM_TYPE_8BIT_ADDR	1
-#define EEPROM_TYPE_16BIT_ADDR 	2
-
 /*
  * opens the eeprom device at [dev_fqn] (i.e. /dev/i2c-N) whose address is
  * [addr] and set the eeprom_24c32 [e]
@@ -49,7 +45,9 @@ int eeprom_read_current_byte(int fd);
  */
 int eeprom_write_byte(int fd, int mem_addr, int data);
 
+/*
+ * UNUSED: write a block/page to the eeprom
+ */
 int eeprom_write_block(int fd, int mem_addr, int data);
 
 #endif
-
