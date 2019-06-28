@@ -28,6 +28,9 @@
 #include <string.h>
 #include "eeprom.h"
 
+char *dev;
+int i2c_addr, fd, write_cycle_time;
+
 static int _writeAddress(struct eeprom *e, __u8 buf[2]){
 	int r = i2c_smbus_write_byte_data(e->fd, buf[0], buf[1]);
 	if(r < 0)

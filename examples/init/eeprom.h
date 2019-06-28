@@ -24,41 +24,32 @@
 #define EEPROM_TYPE_8BIT_ADDR	1
 #define EEPROM_TYPE_16BIT_ADDR 	2
 
-struct eeprom
-{
-	char *dev; 	// device file i.e. /dev/i2c-N
-	int addr;	// i2c address
-	int fd;		// file descriptor
-	int type; 	// eeprom type
-	int write_cycle_time;
-};
-
 /*
  * opens the eeprom device at [dev_fqn] (i.e. /dev/i2c-N) whose address is
  * [addr] and set the eeprom_24c32 [e]
  */
-int eeprom_init(char *dev_fqn, int addr, int type, int delay, struct eeprom*);
+int eeprom_init(char *dev_fqn, int addr, int delay);
 /*
  * closees the eeprom device [e] 
  */
-int eeprom_close(struct eeprom *e);
+int eeprom_close(int fd);
 /*
  * read and returns the eeprom byte at memory address [mem_addr] 
  * Note: eeprom must have been selected by ioctl(fd,I2C_SLAVE,address) 
  */
-int eeprom_read_byte(struct eeprom* e, __u16 mem_addr);
+int eeprom_read_byte(int fd, int mem_addr);
 /*
  * read the current byte
  * Note: eeprom must have been selected by ioctl(fd,I2C_SLAVE,address) 
  */
-int eeprom_read_current_byte(struct eeprom *e);
+int eeprom_read_current_byte(int fd);
 /*
  * writes [data] at memory address [mem_addr] 
  * Note: eeprom must have been selected by ioctl(fd,I2C_SLAVE,address) 
  */
-int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data);
+int eeprom_write_byte(int fd, int mem_addr, int data);
 
-int eeprom_write_block(struct eeprom *e, __u16 mem_addr, __u8 data);
+int eeprom_write_block(int fd, int mem_addr, int data);
 
 #endif
 
