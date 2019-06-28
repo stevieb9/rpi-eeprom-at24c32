@@ -18,9 +18,10 @@ int write_cycle_time = 0;
 
 static int _writeAddress(int fd, __u8 buf[2]){
 	int r = i2c_smbus_write_byte_data(fd, buf[0], buf[1]);
-	if(r < 0)
+	if(r < 0){
 		fprintf(stderr, "Error _writeAddress: %s\n", strerror(errno));
-		croak("failed to write to the i2c bus\n");
+		croak("_writeAddress() failed to write to the i2c bus\n");
+    }
 	usleep(10);
 	return r;
 }
@@ -28,9 +29,10 @@ static int _writeAddress(int fd, __u8 buf[2]){
 static int _writeByte(int fd, __u8 buf[3]){
 	int r;
 	r = i2c_smbus_write_word_data(fd, buf[0], buf[2] << 8 | buf[1]);
-	if(r < 0)
+	if(r < 0){
 		fprintf(stderr, "Error _writeByte: %s\n", strerror(errno));
-		croak("failed to write to the i2c bus\n");
+		croak("_writeByte() failed to write to the i2c bus\n");
+    }
 	usleep(10);
 	return r;
 }
@@ -38,9 +40,10 @@ static int _writeByte(int fd, __u8 buf[3]){
 static int _writeBlock(int fd, __u8 eepromAddr, int len, __u8 *data){
 	int r;
 	r = i2c_smbus_write_block_data(fd, eepromAddr, len, data);
-	if(r < 0)
+	if(r < 0){
 		fprintf(stderr, "Error _writeBlock: %s\n", strerror(errno));
-		croak("failed to write to the i2c bus\n");
+		croak("_writeBlock() failed to write to the i2c bus\n");
+    }
 	usleep(10);
 	return r;
 }
@@ -77,7 +80,7 @@ int eeprom_read_current_byte(int fd){
 	return i2c_smbus_read_byte(fd);
 }
 
-int eeprom_read_byte(int fd, int mem_addr){
+int eeprom_read(int fd, int mem_addr){
 	int r;
 	ioctl(fd, BLKFLSBUF); // clear kernel read buffer
 
@@ -92,7 +95,7 @@ int eeprom_read_byte(int fd, int mem_addr){
     return(i2c_smbus_read_byte(fd));
 }
 
-int eeprom_write_byte(int fd, int mem_addr, int data){
+int eeprom_write(int fd, int mem_addr, int data){
     __u8 buf[3] = {
         (__u8)(mem_addr >> 8) & 0x00ff,
         (__u8)mem_addr & 0x00ff,
@@ -141,12 +144,12 @@ eeprom_read_current_byte (fd)
 	int	fd
 
 int
-eeprom_read_byte (fd, mem_addr)
+eeprom_read (fd, mem_addr)
 	int	fd
 	int	mem_addr
 
 int
-eeprom_write_byte (fd, mem_addr, data)
+eeprom_write (fd, mem_addr, data)
 	int	fd
 	int	mem_addr
 	int	data
