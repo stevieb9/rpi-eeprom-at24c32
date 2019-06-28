@@ -10,18 +10,17 @@ use Inline 'C';
 use constant {
     I2C_DEV          => "/dev/i2c-1",
     I2C_ADDR         => 0x57,
-    WRITE_CYCLE_TIME => 0
+    WRITE_CYCLE_TIME => 1
 };
 
 my $fd = eeprom_init(I2C_DEV, I2C_ADDR, WRITE_CYCLE_TIME);
 
-say $fd;
+for (100..110) {
+    eeprom_write_byte($fd, $_, $_);
+    say eeprom_read_byte($fd, $_);
+}
 
-say eeprom_write_byte($fd, 25, 8);
-
-say eeprom_read_byte($fd, 25);
-
-XS_close($fd);
+eeprom_close($fd);
 
 
 __END__
@@ -39,9 +38,9 @@ __C__
 #include <string.h>
 #include "eeprom.h"
 
-int i2c_addr, fd, write_cycle_time = 0;
+int write_cycle_time = 0;
 
-static int _writeAddress(int fd, int buf[2]){
+static int _writeAddress(int fd, __u8 buf[2]){
 	int r = i2c_smbus_write_byte_data(fd, buf[0], buf[1]);
 	if(r < 0)
 		fprintf(stderr, "Error _writeAddress: %s\n", strerror(errno));
@@ -49,8 +48,7 @@ static int _writeAddress(int fd, int buf[2]){
 	return r;
 }
 
-static int _writeByte(int fd, __u8 buf[3])
-{
+static int _writeByte(int fd, __u8 buf[3]){
 	int r;
 	r = i2c_smbus_write_word_data(fd, buf[0], buf[2] << 8 | buf[1]);
 	if(r < 0)
@@ -80,7 +78,7 @@ int eeprom_init(char *dev_fqn, int addr, int delay){
 	}
 
 	// set working device
-	if( ( r = ioctl(fd, I2C_SLAVE, i2c_addr)) < 0)
+	if( ( r = ioctl(fd, I2C_SLAVE, addr)) < 0)
 	{
 		fprintf(stderr, "Error opening EEPROM i2c connection: %s\n", strerror(errno));
 		return -1;
@@ -88,7 +86,7 @@ int eeprom_init(char *dev_fqn, int addr, int delay){
 
     write_cycle_time = delay;
 
-	return 0;
+	return fd;
 }
 
 int eeprom_close(int fd){
@@ -117,22 +115,20 @@ int eeprom_read_byte(int fd, int mem_addr){
 }
 
 int eeprom_write_byte(int fd, int mem_addr, int data){
-
     __u8 buf[3] = {
-        (mem_addr >> 8) & 0x00ff,
-        mem_addr & 0x00ff,
-        data
+        (__u8)(mem_addr >> 8) & 0x00ff,
+        (__u8)mem_addr & 0x00ff,
+        (__u8)data
     };
 
     int ret = _writeByte(fd, buf);
-
     if (ret == 0 && write_cycle_time != 0) {
         usleep(1000 * write_cycle_time);
     }
     return ret;
 }
 
-int eeprom_write_block(int fd, __u16 mem_addr, __u8 data){
+int eeprom_write_block(int fd, int mem_addr, int data){
 
     __u8 addr_msb = (mem_addr >> 8) & 0x00ff;
     __u8 buf[2] = {
