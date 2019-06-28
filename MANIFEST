@@ -1,9 +1,6 @@
 AT24C32.xs
 Changes
 eeprom.h
-examples/create_xs.pl
-examples/init/create_xs.pl
-examples/init/i2c-dev.h
 i2c-dev.h
 lib/RPi/EEPROM/AT24C32.pm
 Makefile.PL
