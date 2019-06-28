@@ -6,7 +6,7 @@ use warnings;
 use Carp qw(croak);
 use Data::Dumper;
 
-our $VERSION = '0.01';
+our $VERSION = '1.00';
 
 require XSLoader;
 XSLoader::load('RPi::EEPROM::AT24C32', $VERSION);
