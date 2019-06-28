@@ -17,50 +17,59 @@
 int write_cycle_time = 0;
 
 static int _writeAddress(int fd, __u8 buf[2]){
+
 	int r = i2c_smbus_write_byte_data(fd, buf[0], buf[1]);
+
 	if(r < 0){
 		fprintf(stderr, "Error _writeAddress: %s\n", strerror(errno));
 		croak("_writeAddress() failed to write to the i2c bus\n");
     }
+
 	usleep(10);
+
 	return r;
 }
 
 static int _writeByte(int fd, __u8 buf[3]){
-	int r;
-	r = i2c_smbus_write_word_data(fd, buf[0], buf[2] << 8 | buf[1]);
+
+	int r = i2c_smbus_write_word_data(fd, buf[0], buf[2] << 8 | buf[1]);
+
 	if(r < 0){
 		fprintf(stderr, "Error _writeByte: %s\n", strerror(errno));
 		croak("_writeByte() failed to write to the i2c bus\n");
-    }
+	  }
+
 	usleep(10);
+
 	return r;
 }
 
 static int _writeBlock(int fd, __u8 eepromAddr, int len, __u8 *data){
-	int r;
-	r = i2c_smbus_write_block_data(fd, eepromAddr, len, data);
+
+	int r = i2c_smbus_write_block_data(fd, eepromAddr, len, data);
+
 	if(r < 0){
 		fprintf(stderr, "Error _writeBlock: %s\n", strerror(errno));
 		croak("_writeBlock() failed to write to the i2c bus\n");
     }
+
 	usleep(10);
+
 	return r;
 }
 
 int eeprom_init(char *dev_fqn, int addr, int delay){
-	int funcs, fd, r;
+
+	int fd, r;
 
 	fd = open(dev_fqn, O_RDWR);
-	if(fd <= 0)
-	{
+
+	if(fd <= 0){
 		fprintf(stderr, "Error eeprom_init: %s\n", strerror(errno));
 		return -1;
 	}
 
-	// set working device
-	if( ( r = ioctl(fd, I2C_SLAVE, addr)) < 0)
-	{
+	if( ( r = ioctl(fd, I2C_SLAVE, addr)) < 0){
 		fprintf(stderr, "Error opening EEPROM i2c connection: %s\n", strerror(errno));
 		return -1;
 	}
@@ -76,17 +85,17 @@ int eeprom_close(int fd){
 }
 
 int eeprom_read_current_byte(int fd){
-	ioctl(fd, BLKFLSBUF); // clear kernel read buffer
+	ioctl(fd, BLKFLSBUF);
 	return i2c_smbus_read_byte(fd);
 }
 
 int eeprom_read(int fd, int mem_addr){
-	int r;
-	ioctl(fd, BLKFLSBUF); // clear kernel read buffer
+
+	ioctl(fd, BLKFLSBUF);
 
 	__u8 buf[2] = { (mem_addr >> 8) & 0x0ff, mem_addr & 0x0ff };
 
-    r = _writeAddress(fd, buf);
+    int r = _writeAddress(fd, buf);
 
     if (r < 0){
 		return r;
@@ -96,6 +105,7 @@ int eeprom_read(int fd, int mem_addr){
 }
 
 int eeprom_write(int fd, int mem_addr, int data){
+
     __u8 buf[3] = {
         (__u8)(mem_addr >> 8) & 0x00ff,
         (__u8)mem_addr & 0x00ff,
@@ -103,9 +113,11 @@ int eeprom_write(int fd, int mem_addr, int data){
     };
 
     int ret = _writeByte(fd, buf);
+
     if (ret == 0 && write_cycle_time != 0) {
         usleep(1000 * write_cycle_time);
     }
+
     return ret;
 }
 
@@ -122,6 +134,7 @@ int eeprom_write_block(int fd, int mem_addr, int data){
     if (ret == 0 && write_cycle_time != 0) {
         usleep(1000 * write_cycle_time);
     }
+
     return ret;
 }
 
