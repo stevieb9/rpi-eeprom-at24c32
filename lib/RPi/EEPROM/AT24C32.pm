@@ -89,10 +89,11 @@ __END__
 
 =head1 NAME
 
-RPi::EEPROM::AT24C32 - Read and write to the AT24C32/64 based EEPROM ICs
+RPi::EEPROM::AT24C32 - Read and write to the AT24C32 based EEPROM ICs
 
 =head1 DESCRIPTION
 
+Read and write data to the AT24C32-based EEPROM Integrated Circuits.
 =head1 SYNOPSIS
 
 =head1 METHODS

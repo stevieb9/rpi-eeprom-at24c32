@@ -5,6 +5,9 @@
     Copyright (C) 2011 by Kris Rusocki <kszysiu@gmail.com>
     - support for user-defined write cycle time
 
+    Copyright (C) 2019 by Steve Bertrand <steveb@cpan.org>
+    - rename functions, modify for Perl wrapper
+
     $Id: 24cXX.h,v 1.6 2004/02/29 11:05:28 tat Exp $
  ***************************************************************************/
 
