@@ -88,11 +88,12 @@ __END__
 
 =head1 NAME
 
-RPi::EEPROM::AT24C32 - Read and write to the AT24C32 based EEPROM ICs
+RPi::EEPROM::AT24C32 - Read and write to the AT24C32 based EEPROM ICs via i2c
 
 =head1 DESCRIPTION
 
-Read and write data to the AT24C32-based EEPROM Integrated Circuits.
+Read and write data to the AT24C32-based EEPROM Integrated Circuits over the i2c
+bus.
 
 Currently, only the actual AT24C32 that has 4096 8-bit address locations
 (C<0-4095>).
