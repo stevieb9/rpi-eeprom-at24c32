@@ -344,7 +344,7 @@ int main(int argc, char** argv)
 		output_file = "<stdout>";
 	}
 
-	die_if3(eeprom_open(device, i2c_addr, eeprom_type, write_cycle_time, &e) < 0, 
+	die_if3(eeprom_init(device, i2c_addr, eeprom_type, write_cycle_time, &e) < 0,
 			"unable to open eeprom device file "
 			"(check that the file exists and that it's readable)",
 			2);
