@@ -121,23 +121,6 @@ int eeprom_write(int fd, int mem_addr, int data){
     return ret;
 }
 
-int eeprom_write_block(int fd, int mem_addr, int data){
-
-    __u8 addr_msb = (mem_addr >> 8) & 0x00ff;
-    __u8 buf[2] = {
-        mem_addr & 0x00ff,
-        data
-    };
-
-    int ret = _writeByte(fd, buf);
-
-    if (ret == 0 && write_cycle_time != 0) {
-        usleep(1000 * write_cycle_time);
-    }
-
-    return ret;
-}
-
 MODULE = RPi::EEPROM::AT24C32  PACKAGE = RPi::EEPROM::AT24C32
 
 PROTOTYPES: DISABLE
@@ -163,12 +146,6 @@ eeprom_read (fd, mem_addr)
 
 int
 eeprom_write (fd, mem_addr, data)
-	int	fd
-	int	mem_addr
-	int	data
-
-int
-eeprom_write_block (fd, mem_addr, data)
 	int	fd
 	int	mem_addr
 	int	data

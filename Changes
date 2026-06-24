@@ -1,7 +1,9 @@
 Revision history for RPi-EEPROM-AT24C32
 
 1.00 UNREL
-        -
+        - Removed broken, unused eeprom_write_block() XS export (never sent the
+          address MSB and read past the end of its 2-byte buffer); single-byte
+          writes go through eeprom_write()
 
 0.01    2019-06-28
         - initial version released
