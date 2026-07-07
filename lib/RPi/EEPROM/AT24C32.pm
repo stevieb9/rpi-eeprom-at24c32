@@ -137,15 +137,15 @@ Optional, Integer. The i2c address of the EEPROM device. Defaults to C<0x57>.
 
     delay => 1
 
-Optional, Integer. Due to issues on the Raspberry Pi's i2c ability to "clock
-stretch" the bus, with some devices a slight delay (milliseconds) must be used
-between write cycles. This parameter is the multiplier for said write cycle
-timer.
+Optional, Integer. An upper bound, in milliseconds, on how long a
+L<write|/"write($addr, $byte)"> waits for the chip to finish its internal
+write cycle. Writes now B<acknowledge-poll> the chip (re-address it until it
+ACKs) and return the instant the write completes - typically well under the
+10ms maximum - so this value is rarely relevant. It is floored at the
+datasheet's C<t_WR> (10ms), so too small a value can never make a write return
+early; raise it only if a slow or flaky bus ever needs a longer ceiling.
 
-If you're frequently getting write or I/O errors when performing multiple
-write/reads in succession, bump this number up.
-
-Defaults to C<1>.
+Defaults to C<1> (floored to the ~10ms write time).
 
 =head2 read($addr)
 
@@ -206,6 +206,106 @@ within limits.
 =head2 _check_byte
 
 For write calls, ensures that the data byte supplied is within valid limits.
+
+=head1 TECHNICAL INFORMATION
+
+=head2 DEVICE SPECIFICS
+
+    - 32Kbit serial EEPROM: 4096 x 8 bits, in 32-byte pages (the AT24C64
+      is the 64Kbit version of the same interface)
+    - 1 million write cycle endurance, 100-year data retention
+    - Self-timed write cycle: 10ms max at Pi-compatible voltages, during
+      which the chip ignores the bus entirely (see L</ON THE WIRE>)
+    - 1.8V, 2.7V and 5V grades; SCL is rated 100kHz below 5V, so the
+      Pi's default 100kHz bus speed is exactly right
+    - Eight strap-selectable bus addresses, 0x50-0x57, via the A2/A1/A0
+      pins (floating straps read low); this module defaults to 0x57 (all
+      three high), the wiring commonly found on DS3231 RTC carrier boards
+    - WP pin to VCC write-protects the top quadrant of memory; tied to
+      ground, the whole array is writable
+
+Wiring: VCC to 3.3V, GND to ground, SDA to GPIO 2 (pin 3), SCL to GPIO 3
+(pin 5); strap A2/A1/A0 and WP per the notes above. C<i2cdetect -y 1>
+shows the chip at whatever address is strapped.
+
+=head2 MEMORY MAP
+
+    0x000-0xFFF   4096 bytes (32Kbit), as 128 pages of 32 bytes
+    0xC00-0xFFF   Top quadrant - hardware write-protected when WP = VCC
+
+The word address is 12 bits, sent on the wire as two bytes; the top four
+bits of the first byte are don't-cares. The 32-byte page size matters
+only for the chip's multi-byte page-write mode - this module writes a
+single byte per transaction, so page boundaries never come into play.
+
+An internal address counter holds the last address accessed (plus one
+once a byte has actually been read) and persists between transactions as
+long as the chip stays powered - L<read|/"read($addr)"> relies on
+exactly that (see L</ON THE WIRE>).
+
+The chip answers the bus with the standard 2-wire EEPROM device address
+word:
+
+    1  0  1  0  A2 A1 A0 R/W
+
+The fixed C<1010> nibble plus the three strap bits give the 0x50-0x57
+range; the trailing bit selects read (1) or write (0).
+
+=head2 ON THE WIRE
+
+The XS drives the kernel's C</dev/i2c-N> SMBus interface. Everything the
+module does reduces to two frame shapes:
+
+    S = START    P = STOP
+    A = ACK (receiver pulls SDA low)    N = NACK (master, "no more bytes")
+
+A L<write|/"write($addr, $byte)"> is the chip's byte-write operation -
+one four-byte frame.
+C<< $eeprom->write(677, 66) >> at the default address 0x57 (address
+byte C<0xAE> on the wire):
+
+    +---+------+---+------+---+------+---+------+---+---+
+    | S | 0xAE | A | 0x02 | A | 0xA5 | A | 0x42 | A | P |
+    +---+------+---+------+---+------+---+------+---+---+
+         addr+W     word       word       data
+         (0x57)     addr MSB   addr LSB   byte
+
+At that STOP the chip starts its self-timed internal write cycle (t_WR,
+10ms max at Pi voltages) and ignores the bus completely - it won't even
+acknowledge its own address - until the cycle finishes. The XS exploits
+exactly that: after each write it B<acknowledge-polls> the chip (doc0336
+p.9), re-sending the device address until the chip ACKs, which happens only
+once the write cycle completes. C<write> therefore blocks for the real t_WR
+and no longer - a following operation can never land inside a still-running
+write cycle. The C<delay> parameter in L<new|/"new(%args)"> is now just a
+rarely-needed ceiling on that poll.
+
+A L<read|/"read($addr)"> is two frames: an address-load write (no data
+byte), then a
+current-address read that the chip answers from its address counter:
+
+    +---+------+---+------+---+------+---+---+
+    | S | 0xAE | A | 0x02 | A | 0xA5 | A | P |    Load the address
+    +---+------+---+------+---+------+---+---+    counter, write nothing
+
+    +---+------+---+------+---+---+
+    | S | 0xAF | A | 0x42 | N | P |    Current-address read;
+    +---+------+---+------+---+---+    chip drives the data byte
+         addr+R
+
+The datasheet draws its "random read" with a repeated START joining
+those two; the SMBus calls used here issue them as separate STOP-divided
+transactions, which works because the address counter persists between
+operations. After the byte is delivered the counter sits at the next
+address - the chip could stream sequentially from there, but this module
+reads one byte per call.
+
+=head2 DATASHEET
+
+The Atmel (now Microchip) AT24C32/64 datasheet (doc 0336) is distributed
+with this software as F<docs/datasheet/AT24C32.pdf>. It covers the
+addressing, the read/write frames, the timing and the electrical
+characteristics this module's XS layer implements.
 
 =head1 AUTHOR
 

@@ -1,5 +1,6 @@
 AT24C32.xs
 Changes
+docs/datasheet/AT24C32.pdf
 eeprom.h
 i2c-dev.h
 lib/RPi/EEPROM/AT24C32.pm

@@ -4,6 +4,18 @@ Revision history for RPi-EEPROM-AT24C32
         - Removed broken, unused eeprom_write_block() XS export (never sent the
           address MSB and read past the end of its 2-byte buffer); single-byte
           writes go through eeprom_write()
+        - Added TECHNICAL INFORMATION POD (DEVICE SPECIFICS, MEMORY MAP, ON
+          THE WIRE, DATASHEET): chip capabilities, wiring, the 4096-byte/
+          128-page layout, and the exact SMBus frames eeprom_read()/
+          eeprom_write() put on the bus, verified against the Atmel doc0336
+          datasheet
+        - Bundled the datasheet as docs/datasheet/AT24C32.pdf and repointed
+          the DATASHEET POD section at it instead of the web URL
+        - Replaced the fixed post-write sleep with datasheet acknowledge
+          polling (doc0336 p.9): write() now re-addresses the chip until it
+          ACKs, waiting the real t_WR (<=10ms) instead of a guessed 1ms, so a
+          following read/write can't land in a running write cycle. The delay
+          param is now a rarely-needed ceiling on that poll (floored at 10ms)
 
 0.01    2019-06-28
         - initial version released

@@ -14,6 +14,10 @@
 #include <string.h>
 #include "eeprom.h"
 
+/* Acknowledge-polling tunables (see eeprom_write) */
+#define POLL_INTERVAL_US    500     /* Gap between address ACK probes (us) */
+#define POLL_TIMEOUT_MIN_US 15000   /* Poll-ceiling floor; > t_WR (10ms max) */
+
 int write_cycle_time = 0;
 
 static int _writeAddress(int fd, __u8 buf[2]){
@@ -114,8 +118,31 @@ int eeprom_write(int fd, int mem_addr, int data){
 
     int ret = _writeByte(fd, buf);
 
-    if (ret == 0 && write_cycle_time != 0) {
-        usleep(1000 * write_cycle_time);
+    if (ret == 0) {
+
+        /* Acknowledge polling (doc0336 p.9): while the internally-timed
+           write cycle runs (t_WR, 10ms max at Pi voltages) the AT24C32 NACKs
+           its own address, then ACKs once the write completes. Re-address
+           the chip until it ACKs, so we wait exactly as long as it needs
+           instead of a fixed guess. Cap the wait at write_cycle_time ms (the
+           'delay' param) but never below t_WR, so a missing or wedged chip
+           can't spin forever. */
+
+        int timeout_us = 1000 * write_cycle_time;
+
+        if (timeout_us < POLL_TIMEOUT_MIN_US) {
+            timeout_us = POLL_TIMEOUT_MIN_US;
+        }
+
+        int waited_us = 0;
+
+        while (i2c_smbus_write_quick(fd, I2C_SMBUS_WRITE) < 0) {
+            if (waited_us >= timeout_us) {
+                break;
+            }
+            usleep(POLL_INTERVAL_US);
+            waited_us += POLL_INTERVAL_US;
+        }
     }
 
     return ret;
