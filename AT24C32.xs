@@ -48,20 +48,6 @@ static int _writeByte(int fd, __u8 buf[3]){
 	return r;
 }
 
-static int _writeBlock(int fd, __u8 eepromAddr, int len, __u8 *data){
-
-	int r = i2c_smbus_write_block_data(fd, eepromAddr, len, data);
-
-	if(r < 0){
-		fprintf(stderr, "Error _writeBlock: %s\n", strerror(errno));
-		croak("_writeBlock() failed to write to the i2c bus\n");
-    }
-
-	usleep(10);
-
-	return r;
-}
-
 int eeprom_init(char *dev_fqn, int addr, int delay){
 
 	int fd, r;
@@ -81,16 +67,6 @@ int eeprom_init(char *dev_fqn, int addr, int delay){
     write_cycle_time = delay;
 
 	return fd;
-}
-
-int eeprom_close(int fd){
-	close(fd);
-	return 0;
-}
-
-int eeprom_read_current_byte(int fd){
-	ioctl(fd, BLKFLSBUF);
-	return i2c_smbus_read_byte(fd);
 }
 
 int eeprom_read(int fd, int mem_addr){
@@ -157,14 +133,6 @@ eeprom_init (dev_fqn, addr, delay)
 	char *	dev_fqn
 	int	addr
 	int	delay
-
-int
-eeprom_close (fd)
-	int	fd
-
-int
-eeprom_read_current_byte (fd)
-	int	fd
 
 int
 eeprom_read (fd, mem_addr)

@@ -16,6 +16,12 @@ Revision history for RPi-EEPROM-AT24C32
           ACKs, waiting the real t_WR (<=10ms) instead of a guessed 1ms, so a
           following read/write can't land in a running write cycle. The delay
           param is now a rarely-needed ceiling on that poll (floored at 10ms)
+        - Removed the dead internal _writeBlock() helper (it backed the deleted
+          eeprom_write_block export and was never called) and the unused
+          eeprom_close()/eeprom_read_current_byte() XS exports the OO interface
+          never used
+        - Added HW-free unit tests (t/10-api_and_validation.t) covering the
+          removed XS symbols and the address/byte range validators
 
 0.01    2019-06-28
         - initial version released
