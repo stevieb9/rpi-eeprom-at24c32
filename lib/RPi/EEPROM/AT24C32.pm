@@ -28,6 +28,13 @@ sub new {
     my $self = bless {%args}, $class;
 
     my $fd = eeprom_init($args{device}, $args{address}, $args{delay});
+
+    if ($fd < 0) {
+        croak "new() failed to initialise the EEPROM at " .
+              sprintf('0x%02X', $args{address}) .
+              " on $args{device} - i2c init failed; check the bus and address\n";
+    }
+
     $self->fd($fd);
 
     return $self;

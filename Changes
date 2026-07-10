@@ -22,6 +22,9 @@ Revision history for RPi-EEPROM-AT24C32
           never used
         - Added HW-free unit tests (t/10-api_and_validation.t) covering the
           removed XS symbols and the address/byte range validators
+        - new() now croaks when eeprom_init() fails (open/ioctl error, returning
+          -1) instead of blessing a broken object with fd = -1; added a
+          hardware-free test that a nonexistent device makes new() croak
 
 0.01    2019-06-28
         - initial version released

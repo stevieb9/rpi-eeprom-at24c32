@@ -52,4 +52,16 @@ like($@, qr/out of range/, 'byte 256 (above max) croaks');
 is($mod->can('_check_byte')->('write', 0), 1, 'byte 0 (min) passes');
 is($mod->can('_check_byte')->('write', 255), 1, 'byte 255 (max) passes');
 
+# new() croaks (rather than returning a broken fd=-1 object) when eeprom_init
+# fails. A nonexistent device makes open() fail HW-free; suppress the C-layer's
+# diagnostic on stderr so the test output stays clean.
+my $init_err;
+{
+    local *STDERR;
+    open STDERR, '>', '/dev/null';
+    eval { $mod->new(device => '/dev/rpi-eeprom-nonexistent-test') };
+    $init_err = $@;
+}
+like($init_err, qr/failed to initialise the EEPROM/, 'new() croaks when i2c init fails (not a broken fd=-1 object)');
+
 done_testing;
